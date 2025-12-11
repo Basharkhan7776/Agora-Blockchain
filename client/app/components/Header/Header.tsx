@@ -37,12 +37,14 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <Image
-                width={32}
-                height={32}
+                <Image
+                width={0}
+                height={0}
+                sizes="200px"
                 className="h-8 w-auto"
                 src="/aossie.png"
                 alt="Agora Blockchain"
+                style={{ width: 'auto' }}
               />
               <h1 className="ml-3 text-xl font-bold text-gray-800 hidden sm:block">
                 Agora Blockchain
