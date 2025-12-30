@@ -64,6 +64,10 @@ def chat():
         sentence = tokenize(user_message)
         X = bag_of_words(sentence, data['all_words']).unsqueeze(0).to(device)
 
+        # Check if input is gibberish (no known words recognized)
+        if X.sum().item() == 0:
+            return jsonify({"message": "I do not understand..."})
+
         # Make prediction
         output = model(X)
         _, predicted = torch.max(output, dim=1)
