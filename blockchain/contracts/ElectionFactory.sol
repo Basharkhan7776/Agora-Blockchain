@@ -33,6 +33,7 @@ contract ElectionFactory is CCIPReceiver {
   address private immutable electionGenerator;
 
   mapping(uint election => address owner) private electionOwner;
+  mapping(uint electionId => uint index) private electionIdToIndex;
   mapping(address owner => address[] election) private userElection;
   mapping(uint64 sourceChain => address senderContract)
     private approvedSenderContracts;
@@ -79,20 +80,34 @@ contract ElectionFactory is CCIPReceiver {
       msg.sender,
       resultCalculator
     );
-    electionCount++;
-    electionOwner[openBasedElections.length] = msg.sender;
+
+    // Use electionId (electionCount) for ownership and indexing
+    electionOwner[electionCount] = msg.sender;
+    electionIdToIndex[electionCount] = openBasedElections.length;
     openBasedElections.push(address(election));
+
+    electionCount++;
   }
 
   function deleteElection(uint _electionId) external {
     if (electionOwner[_electionId] != msg.sender) revert OnlyOwner();
-    uint lastElement = openBasedElections.length - 1;
-    if (_electionId != lastElement) {
-      openBasedElections[_electionId] = openBasedElections[lastElement];
-      electionOwner[_electionId] = electionOwner[lastElement];
+
+    uint indexToDelete = electionIdToIndex[_electionId];
+    uint lastIndex = openBasedElections.length - 1;
+
+    if (indexToDelete != lastIndex) {
+      address lastElectionAddr = openBasedElections[lastIndex];
+      openBasedElections[indexToDelete] = lastElectionAddr;
+
+      // Update the index of the moved election
+      // We need to fetch the ID of the election at the last index to update its index mapping
+      uint lastElectionId = Election(lastElectionAddr).electionId();
+      electionIdToIndex[lastElectionId] = indexToDelete;
     }
+
     openBasedElections.pop();
-    delete electionOwner[lastElement];
+    delete electionOwner[_electionId];
+    delete electionIdToIndex[_electionId];
   }
 
   function addWhitelistedContract(

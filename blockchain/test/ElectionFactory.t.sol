@@ -117,4 +117,43 @@ contract ElectionFactoryTest is Test {
     vm.expectRevert(ElectionFactory.OwnerRestricted.selector);
     factory.addWhitelistedContract(sourceChainSelector, contractAddress);
   }
+
+  function test_DeleteElection_WithStableId() public {
+    // Create 3 elections: IDs 0, 1, 2
+    factory.createElection(mockElectionInfo, mockCandidates, 0, 0); // ID 0
+    factory.createElection(mockElectionInfo, mockCandidates, 0, 0); // ID 1
+    factory.createElection(mockElectionInfo, mockCandidates, 0, 0); // ID 2
+
+    assertEq(factory.getOpenElections().length, 3);
+
+    // Delete middle election (ID 1)
+    factory.deleteElection(1);
+
+    // Check remaining length
+    address[] memory remaining = factory.getOpenElections();
+    assertEq(remaining.length, 2);
+
+    // Verify remaining elections are correct (ID 0 and ID 2)
+    // Note: Since we used swap and pop, ID 2 might have moved to index 1.
+    // Index 0: ID 0
+    // Index 1: ID 2 (swapped from index 2)
+
+    Election electionAt0 = Election(remaining[0]);
+    Election electionAt1 = Election(remaining[1]);
+
+    assertEq(electionAt0.electionId(), 0);
+    assertEq(electionAt1.electionId(), 2);
+
+    // Verify we can delete independent of index (try deleting ID 0)
+    factory.deleteElection(0);
+    remaining = factory.getOpenElections();
+    assertEq(remaining.length, 1);
+
+    // Remaining should be ID 2
+    assertEq(Election(remaining[0]).electionId(), 2);
+
+    // Delete last one
+    factory.deleteElection(2);
+    assertEq(factory.getOpenElections().length, 0);
+  }
 }
